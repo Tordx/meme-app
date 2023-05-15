@@ -1,0 +1,13 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "src/Assets/Fonts/Habesha.ttf",
+      "sha1": "1e5bafd00091c687e326dab98143caacc31b19fe"
+    },
+    {
+      "path": "src/Assets/Fonts/Kondusif.ttf",
+      "sha1": "56c79cc861bed57e3817f1aa195b241e46a0f044"
+    }
+  ]
+}
