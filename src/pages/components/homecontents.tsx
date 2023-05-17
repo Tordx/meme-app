@@ -6,27 +6,63 @@ import { Dark, cyan, darkgreen, light, lightgreen, phdark, phlight, textdark, te
 import TimeAgo from 'react-native-timeago'
 import { RefreshControl } from 'react-native-gesture-handler'
 import { useSelector } from 'react-redux'
-import uuid from 'react-native-uuid'
+import { generateId } from '../../library/idgeneration'
+
 
 type Props = {}
-type MemeData = Record<string, unknown>;
-type RootState = {
+
+interface MemeData {
+  _id: string,
+  _rev: string,
+  image: string
+  video: string
+  title: string
+  description: string
+  timestamp: string
+  username: string
+  userimage: string
+  tag: string
+  default: string
+  status: string
+  upvote: number
+  downvote: number
+  memeid: string
+}
+
+type userid = {
   user: {
-    useraccount: {
-      [key: string]: boolean | number | string;
-    }[];
-  };
-};
+    userid: string,
+  }
+}
+
 
 const Homecontents = (props: Props) => {
 
-  const {useraccount} = useSelector((action: RootState) => action.user)
+  
+
+  // const onShare = async () => {
+  //   try {
+  //     const result = await Share.share({
+  //       message:
+  //         'React Native | A framework for building native apps using React',
+  //     });
+  //     if (result.action === Share.sharedAction) {
+  //       if (result.activityType) {
+  //       } else {
+  //       }
+  //     } else if (result.action === Share.dismissedAction) {
+  //     }
+  //   } catch (error: any) {
+  //     Alert.alert(error.message);
+  //   }
+  // };
+
+  const {userid} =  useSelector((action: userid) => action.user)
   const  [refresh, setrefresh] = useState(false);
   const [data, setdata] = useState<MemeData[]>([]);
-  const [memeid, setmemeid] = useState('');
-  const [getvote, setgetvote] = useState('');
   const colorScheme = useColorScheme() === 'dark';
-  const [upvote, setUpvoted] = useState(false);
+
+    console.log(userid)
 
     const getdata = async() => {
       
@@ -43,14 +79,9 @@ const Homecontents = (props: Props) => {
           
             return item.default
           })
-
-          const memeid = filteredData[0].memeid
           
           setdata(filteredData);
-          setmemeid(memeid)
           console.log('getdata');
-          
-          console.log(memeid)
           console.log(filteredData)
               
               
@@ -63,30 +94,21 @@ const Homecontents = (props: Props) => {
   }
 
   
-  const getvotedata = async() => {
-
+  const handleLike  = async() => {
+    console.log(userid)
     try {
-      let result = await dbMemevote.allDocs({
-        include_docs: true,
-        attachments: true,
-      });
-      if(result.rows){
-        let modifiedArr = result.rows.map((item: any) => 
-            item.doc
-        )
-        let filteredData = modifiedArr.filter((item: any) => {
-        
-          return item.memeid === memeid
-        })
-        
-        setgetvote(filteredData);
-        console.log('votedata');
-        
-        console.log(filteredData)
-            
-            
-        
-      } 
+      console.log('this?');
+      const id = generateId();
+      const pushlike = {
+        _id: id,
+        userid: userid,
+        memeid: data[0].memeid,
+        upvote: true,
+      }
+      console.log(pushlike);
+      await dbMemevote.put(pushlike);
+      console.log(pushlike)
+
     } catch (error) {
       console.error(error);
   }
@@ -96,58 +118,15 @@ const Homecontents = (props: Props) => {
 
   useEffect(() =>{
     getdata()
-    getvotedata()
-    console.log('user account below');
-    
-    console.log(useraccount)
+    console.log('voteid');
   },[])
-
-  const onShare = async () => {
-    try {
-      const result = await Share.share({
-        message:
-          'React Native | A framework for building native apps using React',
-      });
-      if (result.action === Share.sharedAction) {
-        if (result.activityType) {
-        } else {
-        }
-      } else if (result.action === Share.dismissedAction) {
-      }
-    } catch (error: any) {
-      Alert.alert(error.message);
-    }
-  };
-  const addvote = async () => {
-    if (upvote) {
-      // User has already upvoted, so unlike the meme
-      const voteArray = Array.isArray(getvote) ? getvote : [];
-      const filteredData = voteArray.filter((item: any) => item.useraccount === useraccount[0].useraccount);
-      if (filteredData.length > 0) {
-        await dbMemevote.remove(filteredData[0]._id, filteredData[0]._rev);
-      }
-    } else {
-      // User has not upvoted, so like the meme
-      const newVote = {
-        _id: uuid.v4(),
-        memeid: memeid,
-        useraccount: useraccount[0].useraccount,
-        upvote: true,
-      };
-      await dbMemevote.put(newVote);
-    }
-    setUpvoted(!upvote);
-  };
-
 
   const forRefresh = () => {
 
-    console.log('data-refresh');
     setrefresh(true)
-    console.log('data-true');
     getdata()
     setrefresh(false)
-    console.log('data-false');
+    
   }
 
   const renderItem: ListRenderItem<MemeData> = ({ item }) => {
@@ -160,10 +139,10 @@ const Homecontents = (props: Props) => {
           <Image source={{uri: item.userimage as string || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}} style = {styles.userimage} resizeMode = 'cover' />
           <View style = {{flexDirection: 'column'}}>
             <View style = {{flexDirection: 'row', justifyContent: 'center'}}>
-              <Text style = {[styles.username, {color: colorScheme ? textlight: textdark}]}>{item.username as string}</Text>
-              <Text  style = {[styles.tag, {color: colorScheme ? lightgreen: darkgreen}]}> {item.tag as string}</Text>
+              <Text style = {[styles.username, {color: colorScheme ? textlight: textdark}]}>{item.username}</Text>
+              <Text  style = {[styles.tag, {color: colorScheme ? lightgreen: darkgreen}]}> {item.tag}</Text>
               </View>
-            <TimeAgo textStyle={{ color: colorScheme ? light : Dark }} time = {item.timestamp as number} />
+            <TimeAgo textStyle={{ color: colorScheme ? light : Dark }} time = {item.timestamp} />
           </View>
           <Iconbutton
             style = {{position: 'absolute', right: 0}}
@@ -173,19 +152,19 @@ const Homecontents = (props: Props) => {
           />
         </View>
         <View style = {styles.content}>
-          <Text style = {[styles.description, {color: colorScheme ? light: Dark}]}>{item.description as string}</Text>
-          {item.image as string && <Image source={{ uri: item?.image as string}} style = {styles.contentimage} resizeMode = 'contain' />}
+          <Text style = {[styles.description, {color: colorScheme ? light: Dark}]}>{item.description}</Text>
+          {item.image as string && <Image source={{ uri: item?.image}} style = {styles.contentimage} resizeMode = 'contain' />}
         </View>
       </View>
       <View style = {styles.buttoncontainer}>
         <View style = {styles.buttons}>
           <Iconbutton
-          onPress={addvote}
+            onPress={handleLike}
             name = 'thumb-up-outline'
             size = {35}
-            color = {upvote  ? cyan : darkgreen }
+            color = {textdark}
           />
-          <Text style = {[styles.buttoncontent, {color: colorScheme ? textlight: textdark}]}>123</Text>
+          <Text style = {[styles.buttoncontent, {color: colorScheme ? textlight: textdark}]}>{item.upvote}</Text>
         </View>
         <View style = {styles.buttons}>
           <Iconbutton
@@ -197,7 +176,7 @@ const Homecontents = (props: Props) => {
         </View>
         <View style = {styles.buttons}>
           <Iconbutton
-            onPress={onShare}
+            onPress={() => {}}
             name = 'share-outline'
             size = {30}
             color = {colorScheme ? textlight: textdark}
@@ -215,7 +194,7 @@ const Homecontents = (props: Props) => {
         style={{ width: '100%', paddingTop: 10 }}
         data={data}
         renderItem={renderItem}
-        keyExtractor={(item: MemeData) => item._id as string}
+        keyExtractor={(item) => item._id}
         refreshControl={
         
           <RefreshControl
