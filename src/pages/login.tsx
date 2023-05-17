@@ -8,7 +8,7 @@ import lightbackground from '../Assets/Images/background-image-1.png';
 import { useDispatch } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { dbMemeaccount } from '../database/database';
-import { setUserAccount } from '../configurations/redux/accountslice';
+import { setUserAccount, setuserid } from '../configurations/redux/accountslice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Loadingmodal from '../partials/loadingmodal';
 
@@ -47,6 +47,7 @@ const Login = () => {
           const FullDetails = newFilterData[0]
             const newusername = newFilterData[0].username
             const newpassword = newFilterData[0].password
+            const userid = newFilterData[0].userid
             const usertype = newFilterData[0].usertype
             const status = newFilterData[0].status
           if(newusername === username && newpassword === password) {
@@ -59,6 +60,7 @@ const Login = () => {
                 navigation.navigate('toptabhandler');
                 await AsyncStorage.setItem('userCredentials', JSON.stringify(FullDetails));
                 dispatch(setUserAccount(FullDetails));
+                dispatch(setuserid(userid));
                 setusername('')
                 setpassword('')
                 setopenmodal(false)
