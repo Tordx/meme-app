@@ -5,8 +5,9 @@ import { Iconbutton, Loginbutton } from '../../partials/Buttons'
 import { Dark, cyan, darkgreen, light, lightgreen, phdark, phlight, textdark, textlight } from '../../Assets/Colors'
 import TimeAgo from 'react-native-timeago'
 import { RefreshControl } from 'react-native-gesture-handler'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { generateId } from '../../library/idgeneration'
+import { setItem } from '../../configurations/redux/itemslice'
 
 
 type Props = {}
@@ -35,35 +36,45 @@ type userid = {
   }
 }
 
+interface votedata{
+  _id: string,
+  _rev: string,
+  memeid: string,
+  userid: string,
+  upvote: boolean,
+
+}
+
 
 const Homecontents = (props: Props) => {
 
   
 
-  // const onShare = async () => {
-  //   try {
-  //     const result = await Share.share({
-  //       message:
-  //         'React Native | A framework for building native apps using React',
-  //     });
-  //     if (result.action === Share.sharedAction) {
-  //       if (result.activityType) {
-  //       } else {
-  //       }
-  //     } else if (result.action === Share.dismissedAction) {
-  //     }
-  //   } catch (error: any) {
-  //     Alert.alert(error.message);
-  //   }
-  // };
-
+  const onShare = async () => {
+    try {
+      const result = await Share.share({
+        message:
+          'React Native | A framework for building native apps using React',
+      });
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+        } else {
+        }
+      } else if (result.action === Share.dismissedAction) {
+      }
+    } catch (error: any) {
+      Alert.alert(error.message);
+    }
+  }
   const {userid} =  useSelector((action: userid) => action.user)
   const  [refresh, setrefresh] = useState(false);
   const [data, setdata] = useState<MemeData[]>([]);
+  const [firstItem, setFirstItem] = useState<MemeData | null>(null);
+  const [votes, setvotes] = useState<votedata []>([]);
+  
   const colorScheme = useColorScheme() === 'dark';
-
-    console.log(userid)
-
+  const dispatch = useDispatch()
+  
     const getdata = async() => {
       
     try {
@@ -81,8 +92,6 @@ const Homecontents = (props: Props) => {
           })
           
           setdata(filteredData);
-          console.log('getdata');
-          console.log(filteredData)
               
               
           
@@ -93,44 +102,118 @@ const Homecontents = (props: Props) => {
 
   }
 
-  
-  const handleLike  = async() => {
-    console.log(userid)
-    try {
-      console.log('this?');
-      const id = generateId();
-      const pushlike = {
-        _id: id,
-        userid: userid,
-        memeid: data[0].memeid,
-        upvote: true,
-      }
-      console.log(pushlike);
-      await dbMemevote.put(pushlike);
-      console.log(pushlike)
+  const userdataonvote = async() => {
 
+    try {
+      
+      let result = await dbMemevote.allDocs({
+        include_docs: true,
+        attachments: true,
+      });
+      if(result.rows){
+        let modifiedArr = result.rows.map((item: any) => 
+            item.doc
+        )
+        let filteredData = modifiedArr.filter((item: any) => {
+        
+          return item.memeid 
+        })
+        
+        let newFilteredData = filteredData.filter((item: any) => {
+
+          return item.userid === userid
+        })
+          
+        let filteredvote = newFilteredData.filter((item: any) => {
+          return item.upvote  === true
+        })
+        
+        setvotes(filteredvote);
+        
+        
+      } 
     } catch (error) {
       console.error(error);
   }
 
   }
 
+  
+  const handleLike = async (item: MemeData) => {
+    try {
+      const voteData = votes && votes.find((vote) => vote.memeid === item.memeid);
+      console.log(voteData)
+      console.log(voteData?.memeid)
+      console.log(item.memeid);
+      
+      if (voteData) {
+        if (voteData.upvote === true) {
+          console.log('hello');
+          const getid = await dbMemevote.get(voteData._id);
+          console.log(voteData);
+          console.log('hello');
+          const pushmedislike ={
+            _id: getid._id,
+            ...getid,
+            upvote: false,
+          };
+          await dbMemevote.put(pushmedislike)
+          const getmemeid = await dbMeme.get(item._id);
+          const pushmemelike = {
+            _id: item._id,
+            ...getmemeid,
+            upvote: item.upvote - 1,
+          };
+  
+          await dbMeme.put(pushmemelike);
+          getdata();
+          userdataonvote();
+        }
+      }  else {
+        const id = generateId();
+        await dbMemevote.put({
+          _id: id,
+          userid: userid,
+          memeid: item.memeid,
+          upvote: true,
+        });
+
+        const getmemeid = await dbMeme.get(item._id);
+        const pushmemelike = {
+          _id: item._id,
+          ...getmemeid,
+          upvote: item.upvote + 1,
+        };
+
+        await dbMeme.put(pushmemelike);
+        getdata();
+        userdataonvote();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };  
+
 
   useEffect(() =>{
     getdata()
-    console.log('voteid');
+    userdataonvote()
   },[])
 
   const forRefresh = () => {
 
     setrefresh(true)
     getdata()
+    userdataonvote()
     setrefresh(false)
     
   }
 
-  const renderItem: ListRenderItem<MemeData> = ({ item }) => {
-
+  const renderItem = ({ item }: { item: MemeData }) =>{
+  
+    if (!firstItem) {
+      setFirstItem(item);
+    }
     return(
 
     <View style={styles.card}>
@@ -159,12 +242,12 @@ const Homecontents = (props: Props) => {
       <View style = {styles.buttoncontainer}>
         <View style = {styles.buttons}>
           <Iconbutton
-            onPress={handleLike}
-            name = 'thumb-up-outline'
+            onPress={() => {handleLike(item)}}
+            name = {votes.find(vote => vote.memeid === item.memeid)?.upvote ? 'thumb-up' : 'thumb-up-outline'}
             size = {35}
-            color = {textdark}
+            color={votes.find(vote => vote.memeid === item.memeid)?.upvote ? (colorScheme ? lightgreen : cyan) : (colorScheme? textlight: textdark)}
           />
-          <Text style = {[styles.buttoncontent, {color: colorScheme ? textlight: textdark}]}>{item.upvote}</Text>
+          <Text style = {[styles.reaction, {color: colorScheme ? textlight: textdark}]}>{item.upvote}</Text>
         </View>
         <View style = {styles.buttons}>
           <Iconbutton
@@ -267,6 +350,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     fontSize: 16,
 
+  },
+  reaction: {
+    marginLeft: 20,
+    fontSize: 16,
   },
   username: {
     fontSize: 16,
