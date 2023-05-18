@@ -1,4 +1,4 @@
-import { StyleSheet, Text, useColorScheme, View, Pressable, Animated } from 'react-native'
+import { StyleSheet, Text, useColorScheme, View, Pressable, Animated, Image } from 'react-native'
 import React, { FC, useEffect,useRef } from 'react'
 import { getFocusedRouteNameFromRoute, useRoute } from '@react-navigation/native'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
@@ -7,15 +7,35 @@ import Hot from '../pages/views/hot'
 import Issues from '../pages/views/issues'
 import Satire from '../pages/views/satire'
 import Videos from '../pages/views/videos'
-import { Dark, cyan, light, lightgreen } from '../Assets/Colors'
+import { Dark, cyan, light, lightgreen, phdark, phlight, textdark, translucent } from '../Assets/Colors'
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import Icon from 'react-native-vector-icons/Fontisto'
+import { useSelector } from 'react-redux'
+import { Colors } from 'react-native/Libraries/NewAppScreen'
 
 type Props = {
   route?: any,
 }
+interface userdata {
+  user: {
+    useraccount: {
+      _id: string;
+      _rev: string;
+      username: string;
+      userimage: string;
+      firstname: string;
+      lastname: string;
+      password: string;
+      userid: string;
+      status: string;
+      usertype: string;
+    }
+  }
+}
 
 const Toptabhandler: FC<Props> = (props: Props) => {
+  
+  const {useraccount} =  useSelector((action: userdata) => action.user)
   const colorScheme = useColorScheme() === 'dark'
   const Tabs = createMaterialTopTabNavigator()
   const navigationBarRef = useRef(null);
@@ -64,7 +84,7 @@ const Toptabhandler: FC<Props> = (props: Props) => {
       }}
     >
     {getHeaderVisible(route) &&
-    <View>
+    <View style = {{alignItems: 'center', justifyContent: 'center',}}>
       <Text
         style={{
           paddingLeft: 20,
@@ -76,9 +96,20 @@ const Toptabhandler: FC<Props> = (props: Props) => {
       >
         M04d
       </Text>
-      <Pressable style={{ position: 'absolute', right: 20 }}>
-        <FontAwesome name="user-circle" size={30} />
+      <View style={{ position: 'absolute', right: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',}}>
+      <Pressable style = {{ justifyContent: 'center', alignItems: 'center', marginRight: 10, width: 35, height: 35}} >
+        <Icon
+        name = 'plus-a' size={20} color={colorScheme ? phlight : phdark}
+        />
       </Pressable>
+      <Pressable style = {{ justifyContent: 'center', alignSelf: 'center'}}>
+        <Image
+          source = {{uri: useraccount.userimage}}
+          style = {{width: 40, height: 40, borderRadius: 500, justifyContent: 'center', alignSelf: 'center'}} 
+          resizeMode='cover'
+        />
+      </Pressable>
+      </View>
       </View>
       }
     </Animated.View>
