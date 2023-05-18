@@ -19,3 +19,21 @@ import { createSlice } from '@reduxjs/toolkit'
  export const {setItem} = Item.actions
  
  export default Item.reducer
+
+//  {
+//   _id,
+//   _rev,
+//   image,
+//   video,
+//   title,
+//   description,
+//   timestamp,
+//   username,
+//   userimage,
+//   tag,
+//   default,
+//   status,
+//   upvote,
+//   downvote,
+//   memeid,
+// }
