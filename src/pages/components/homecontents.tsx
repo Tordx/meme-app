@@ -1,4 +1,4 @@
-import { FlatList, Image, StyleSheet, Text, View, Share, Alert, ListRenderItem , useColorScheme} from 'react-native'
+import { FlatList, Image, StyleSheet, Text, View, Share, Alert, Pressable , useColorScheme} from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { dbMeme, dbMemevote } from '../../database/database'
 import { Iconbutton, Loginbutton } from '../../partials/Buttons'
@@ -8,6 +8,7 @@ import { RefreshControl } from 'react-native-gesture-handler'
 import { useDispatch, useSelector } from 'react-redux'
 import { generateId } from '../../library/idgeneration'
 import { setItem } from '../../configurations/redux/itemslice'
+import { useNavigation } from '@react-navigation/native'
 
 
 type Props = {}
@@ -71,6 +72,7 @@ const Homecontents = (props: Props) => {
   const [data, setdata] = useState<MemeData[]>([]);
   const [firstItem, setFirstItem] = useState<MemeData | null>(null);
   const [votes, setvotes] = useState<votedata []>([]);
+  const navigation = useNavigation();
   
   const colorScheme = useColorScheme() === 'dark';
   const dispatch = useDispatch()
@@ -249,14 +251,15 @@ const Homecontents = (props: Props) => {
           />
           <Text style = {[styles.reaction, {color: colorScheme ? textlight: textdark}]}>{item.upvote}</Text>
         </View>
-        <View style = {styles.buttons}>
+        <Pressable style = {styles.buttons} onPress={() => {navigation.navigate('comments' as never); dispatch(setItem(item))}}>
           <Iconbutton
+          
             name = 'comment-outline'
             size = {30}
             color = {colorScheme ? textlight: textdark}
           />
          <Text style = {[styles.buttoncontent, {color: colorScheme ? textlight: textdark}]}>Comments</Text>
-        </View>
+        </Pressable>
         <View style = {styles.buttons}>
           <Iconbutton
             onPress={() => {}}
