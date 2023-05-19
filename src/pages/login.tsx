@@ -57,7 +57,7 @@ const Login = () => {
               return;
             } else {
               if(usertype === "user") {
-                navigation.navigate('toptabhandler');
+                navigation.navigate('toptabhandler' as never);
                 await AsyncStorage.setItem('userCredentials', JSON.stringify(FullDetails));
                 dispatch(setUserAccount(FullDetails));
                 dispatch(setuserid(userid));
