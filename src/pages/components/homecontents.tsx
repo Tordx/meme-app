@@ -71,7 +71,7 @@ const Homecontents = (props: Props) => {
   const  [refresh, setrefresh] = useState(false);
   const [data, setdata] = useState<MemeData[]>([]);
   const [firstItem, setFirstItem] = useState<MemeData | null>(null);
-  const [votes, setvotes] = useState<votedata []>([]);
+  const [likes, setlikes] = useState<votedata []>([]);
   const navigation = useNavigation();
   
   const colorScheme = useColorScheme() === 'dark';
@@ -130,7 +130,7 @@ const Homecontents = (props: Props) => {
           return item.upvote  === true
         })
         
-        setvotes(filteredvote);
+        setlikes(filteredvote);
         
         
       } 
@@ -142,18 +142,13 @@ const Homecontents = (props: Props) => {
 
   
   const handleLike = async (item: MemeData) => {
+
     try {
-      const voteData = votes && votes.find((vote) => vote.memeid === item.memeid);
-      console.log(voteData)
-      console.log(voteData?.memeid)
-      console.log(item.memeid);
+      const likingdata = likes && likes.find((likingdata) => likingdata.memeid === item.memeid);
       
-      if (voteData) {
-        if (voteData.upvote === true) {
-          console.log('hello');
-          const getid = await dbMemevote.get(voteData._id);
-          console.log(voteData);
-          console.log('hello');
+      if (likingdata) {
+        if (likingdata.upvote === true) {
+          const getid = await dbMemevote.get(likingdata._id);
           const pushmedislike ={
             _id: getid._id,
             ...getid,
@@ -166,30 +161,44 @@ const Homecontents = (props: Props) => {
             ...getmemeid,
             upvote: item.upvote - 1,
           };
-  
+          await dbMeme.put(pushmemelike);
+          getdata();
+          userdataonvote();
+        } else if (likingdata.upvote === false) {
+          const getid = await dbMemevote.get(likingdata._id);
+          const pushmedislike ={
+            _id: getid._id,
+            ...getid,
+            upvote: true,
+          };
+          await dbMemevote.put(pushmedislike)
+          const getmemeid = await dbMeme.get(item._id);
+          const pushmemelike = {
+            _id: item._id,
+            ...getmemeid,
+            upvote: item.upvote + 1,
+          };
           await dbMeme.put(pushmemelike);
           getdata();
           userdataonvote();
         }
-      }  else {
-        const id = generateId();
-        await dbMemevote.put({
-          _id: id,
-          userid: userid,
-          memeid: item.memeid,
-          upvote: true,
-        });
-
-        const getmemeid = await dbMeme.get(item._id);
-        const pushmemelike = {
-          _id: item._id,
-          ...getmemeid,
-          upvote: item.upvote + 1,
-        };
-
-        await dbMeme.put(pushmemelike);
-        getdata();
-        userdataonvote();
+      } else {
+          const id = generateId();
+          await dbMemevote.put({
+            _id: id,
+            userid: userid,
+            memeid: item.memeid,
+            upvote: true,
+          });
+          const getmemeid = await dbMeme.get(item._id);
+          const pushmemelike = {
+            _id: item._id,
+            ...getmemeid,
+            upvote: item.upvote + 1,
+          };
+          await dbMeme.put(pushmemelike);
+          getdata();
+          userdataonvote();
       }
     } catch (error) {
       console.error(error);
@@ -245,9 +254,9 @@ const Homecontents = (props: Props) => {
         <View style = {styles.buttons}>
           <Iconbutton
             onPress={() => {handleLike(item)}}
-            name = {votes.find(vote => vote.memeid === item.memeid)?.upvote ? 'thumb-up' : 'thumb-up-outline'}
+            name = {likes.find(vote => vote.memeid === item.memeid)?.upvote ? 'thumb-up' : 'thumb-up-outline'}
             size = {35}
-            color={votes.find(vote => vote.memeid === item.memeid)?.upvote ? (colorScheme ? lightgreen : cyan) : (colorScheme? textlight: textdark)}
+            color={likes.find(vote => vote.memeid === item.memeid)?.upvote ? (colorScheme ? lightgreen : cyan) : (colorScheme? textlight: textdark)}
           />
           <Text style = {[styles.reaction, {color: colorScheme ? textlight: textdark}]}>{item.upvote}</Text>
         </View>
