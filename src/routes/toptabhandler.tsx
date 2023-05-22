@@ -1,6 +1,6 @@
 import { StyleSheet, Text, useColorScheme, View, Pressable, Animated, Image } from 'react-native'
 import React, { FC, useEffect,useRef } from 'react'
-import { getFocusedRouteNameFromRoute, useRoute } from '@react-navigation/native'
+import { getFocusedRouteNameFromRoute, useNavigation, useRoute } from '@react-navigation/native'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
 import Home from '../pages/views/home'
 import Hot from '../pages/views/hot'
@@ -41,6 +41,7 @@ const Toptabhandler: FC<Props> = (props: Props) => {
   const navigationBarRef = useRef(null);
   const translateY = new Animated.Value(0);
   const route = useRoute()
+  const navigation = useNavigation();
 
   const hideNavigationBar = () => {
     Animated.timing(translateY, {
@@ -94,10 +95,10 @@ const Toptabhandler: FC<Props> = (props: Props) => {
           alignSelf: 'flex-start',
         }}
       >
-        M04d
+        thRift
       </Text>
       <View style={{ position: 'absolute', right: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',}}>
-      <Pressable style = {{ justifyContent: 'center', alignItems: 'center', marginRight: 10, width: 35, height: 35}} >
+      <Pressable style = {{ justifyContent: 'center', alignItems: 'center', marginRight: 10, width: 35, height: 35}} onPress={() => navigation.navigate('createpost' as never)}>
         <Icon
         name = 'plus-a' size={20} color={colorScheme ? phlight : phdark}
         />
