@@ -254,21 +254,29 @@ const Homecontents = (props: Props) => {
         <View style = {styles.buttons}>
           <Iconbutton
             onPress={() => {handleLike(item)}}
-            name = {likes.find(vote => vote.memeid === item.memeid)?.upvote ? 'thumb-up' : 'thumb-up-outline'}
+            name = {likes.find(vote => vote.memeid === item.memeid)?.upvote ? 'heart' : 'heart-outline'}
             size = {35}
             color={likes.find(vote => vote.memeid === item.memeid)?.upvote ? (colorScheme ? lightgreen : cyan) : (colorScheme? textlight: textdark)}
           />
-          <Text style = {[styles.reaction, {color: colorScheme ? textlight: textdark}]}>{item.upvote}</Text>
         </View>
-        <Pressable style = {styles.buttons} onPress={() => {navigation.navigate('comments' as never); dispatch(setItem(item))}}>
+        <Pressable style = {styles.buttons} >
           <Iconbutton
-          
+          onPress={() => {navigation.navigate('comments' as never); dispatch(setItem(item))}}
             name = 'comment-outline'
             size = {30}
             color = {colorScheme ? textlight: textdark}
           />
-         <Text style = {[styles.buttoncontent, {color: colorScheme ? textlight: textdark}]}>Comments</Text>
+         <Text style = {[styles.buttoncontent, {color: colorScheme ? textlight: textdark}]}></Text>
         </Pressable>
+        <View style = {styles.buttons}>
+          <Iconbutton
+            onPress={() => {}}
+            name = 'hand-coin-outline'
+            size = {30}
+            color = {colorScheme ? textlight: textdark}
+          />
+         <Text style = {[styles.buttoncontent, {color: colorScheme ? textlight: textdark}]}></Text>
+        </View>
         <View style = {styles.buttons}>
           <Iconbutton
             onPress={() => {}}
@@ -276,7 +284,7 @@ const Homecontents = (props: Props) => {
             size = {30}
             color = {colorScheme ? textlight: textdark}
           />
-         <Text style = {[styles.buttoncontent, {color: colorScheme ? textlight: textdark}]}>Share</Text>
+         <Text style = {[styles.buttoncontent, {color: colorScheme ? textlight: textdark}]}></Text>
         </View>
       </View>
     </View>
@@ -338,6 +346,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
     height: 350,
+    borderRadius: 5,
   },
   description: {
     fontSize: 16,
@@ -348,11 +357,11 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignContent: 'center',
+    alignItems: 'center',
     width: '90%'
   },
   buttons: {
-    marginRight: 10,
+    margin: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
