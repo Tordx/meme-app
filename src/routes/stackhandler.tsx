@@ -1,11 +1,12 @@
 import { View, Text, StatusBar, useColorScheme } from 'react-native'
 import React, {FC} from 'react'
 import { NavigationContainer } from '@react-navigation/native'
-import { createStackNavigator } from '@react-navigation/stack';
+import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
 import Login from '../pages/login';
 import { Dark, light, white } from '../Assets/Colors';
 import Toptabhandler from './toptabhandler';
 import Comments from '../partials/comments';
+import Createpost from '../pages/components/createpost';
 
 type Props = {
 
@@ -41,9 +42,19 @@ export const StackHandler: FC<Props> = (props: Props) => {
              name = 'comments' 
              component={Comments} 
              options={{
-                 headerShown: false
+                 headerShown: false,
+                 cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS
              }}
             />
+            <Stack.Screen
+             name = 'createpost' 
+             component={Createpost} 
+             options={{
+                 headerShown: false,
+                 cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS
+             }}
+            />
+
         </Stack.Navigator>
     </NavigationContainer>
     );
