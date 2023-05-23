@@ -1,4 +1,4 @@
-import { StyleSheet, View, useColorScheme, Dimensions, FlatList, ViewToken } from 'react-native';
+import { StyleSheet, View, useColorScheme, Dimensions, FlatList, ViewToken, Button } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { dbMemevideo } from '../../database/database';
 import RNFS from 'react-native-fs';
@@ -18,9 +18,10 @@ interface VideoAttachment {
 interface Document {
   _id: string;
   _rev: string;
-  _attachments: {
-    video: VideoAttachment;
-  };
+  video: string;
+  username: string;
+  userimage: string;
+  timestamp: Date;
 }
 
 const Videos = (props: Props) => {
@@ -29,7 +30,7 @@ const Videos = (props: Props) => {
   const [videoPaths, setVideoPaths] = useState<string[]>([]);
   const windowHeight = Dimensions.get('window').height;
   const flatListRef = useRef<FlatList<Document>>(null);
-  const [focusedIndex, setFocusedIndex] = useState<number>(0);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(0);
 
   const getVideoPaths = async () => {
     try {
@@ -37,15 +38,13 @@ const Videos = (props: Props) => {
         include_docs: true,
         attachments: true,
       });
-  
+
       if (result.rows) {
         let modifiedArr = result.rows.map((item: any) => item.doc);
-        let filteredData = modifiedArr.filter((item: any) => item._attachments);
-  
+        let filteredData = modifiedArr.filter((item: any) => item);
+
         if (filteredData.length > 0) {
           setdata(filteredData);
-  
-      
         }
       }
     } catch (error) {
@@ -57,38 +56,62 @@ const Videos = (props: Props) => {
     getVideoPaths();
   }, []);
 
-  const renderVideoItem = ({ item }: { item: Document }) => {
-    const videoPath = videoPaths.find((path, index) => item._id === data[index]._id);
+  const onViewableItemsChanged = useRef(({ viewableItems, changed }: { viewableItems: ViewToken[], changed: ViewToken[] }) => {
+    if (viewableItems.length > 0) {
+      const index = viewableItems[0].index;
+      setFocusedIndex(index);
+    }
+  });
 
-    if (!videoPath) {
-      return null;
+  const renderVideoItem = ({ item, index }: { item: Document, index: number }) => {
+    if (index !== focusedIndex) {
+      return null; // Render null for non-focused items
     }
 
     return (
       <View style={[styles.videoContainer, { height: windowHeight }]}>
         <Video
-          source={{ uri: videoPath }}
-          resizeMode="cover"
+          source={{ uri: item.video }}
+          resizeMode="contain"
+          playInBackground= {false}
           style={styles.backgroundVideo}
         />
       </View>
     );
   };
 
+  const scrollToNextItem = () => {
+    if (focusedIndex !== null && focusedIndex < data.length - 1) {
+      const nextIndex = focusedIndex + 1;
+      flatListRef.current?.scrollToIndex({ index: nextIndex });
+      setFocusedIndex(nextIndex);
+    }
+  };
+
+  const scrollToPreviousItem = () => {
+    if (focusedIndex !== null && focusedIndex > 0) {
+      const previousIndex = focusedIndex - 1;
+      flatListRef.current?.scrollToIndex({ index: previousIndex });
+      setFocusedIndex(previousIndex);
+    }
+  };
+  
+
   return (
     <View style={styles.container}>
       <FlatList
+  
+        onScroll={scrollToNextItem}
         ref={flatListRef}
         style={{ height: windowHeight }}
         data={data}
         renderItem={renderVideoItem}
         keyExtractor={(item) => item._id}
+        onViewableItemsChanged={onViewableItemsChanged.current}
         pagingEnabled
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={{
-          itemVisiblePercentThreshold: 90,
-        }}
       />
+       <Button title='prev ' onPress={scrollToPreviousItem}></Button>
+      <Button title='next' onPress={scrollToNextItem}></Button>
     </View>
   );
 };
@@ -101,6 +124,8 @@ const styles = StyleSheet.create({
   },
   videoContainer: {
     width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   backgroundVideo: {
     position: 'absolute',
