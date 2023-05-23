@@ -39,7 +39,7 @@ type userid = {
 
 interface votedata{
   _id: string,
-  _rev: string,
+  _rev?: string,
   memeid: string,
   userid: string,
   upvote: boolean,
@@ -142,69 +142,65 @@ const Homecontents = (props: Props) => {
 
   
   const handleLike = async (item: MemeData) => {
-
     try {
       const likingdata = likes && likes.find((likingdata) => likingdata.memeid === item.memeid);
-      
+  
       if (likingdata) {
         if (likingdata.upvote === true) {
-          const getid = await dbMemevote.get(likingdata._id);
-          const pushmedislike ={
-            _id: getid._id,
-            ...getid,
-            upvote: false,
-          };
-          await dbMemevote.put(pushmedislike)
-          const getmemeid = await dbMeme.get(item._id);
-          const pushmemelike = {
-            _id: item._id,
-            ...getmemeid,
-            upvote: item.upvote - 1,
-          };
-          await dbMeme.put(pushmemelike);
-          getdata();
-          userdataonvote();
+          // If already liked, remove the like
+          setlikes(likes.map(vote => vote.memeid === item.memeid ? { ...vote, upvote: false } : vote));
+          setdata(data.map(meme => meme.memeid === item.memeid ? { ...meme, upvote: meme.upvote - 1 } : meme));
         } else if (likingdata.upvote === false) {
-          const getid = await dbMemevote.get(likingdata._id);
-          const pushmedislike ={
-            _id: getid._id,
-            ...getid,
-            upvote: true,
-          };
-          await dbMemevote.put(pushmedislike)
-          const getmemeid = await dbMeme.get(item._id);
-          const pushmemelike = {
-            _id: item._id,
-            ...getmemeid,
-            upvote: item.upvote + 1,
-          };
-          await dbMeme.put(pushmemelike);
-          getdata();
-          userdataonvote();
+          // If disliked, change to like
+          setlikes(likes.map(vote => vote.memeid === item.memeid ? { ...vote, upvote: true } : vote));
+          setdata(data.map(meme => meme.memeid === item.memeid ? { ...meme, upvote: meme.upvote + 1 } : meme));
         }
       } else {
-          const id = generateId();
-          await dbMemevote.put({
-            _id: id,
-            userid: userid,
-            memeid: item.memeid,
-            upvote: true,
-          });
-          const getmemeid = await dbMeme.get(item._id);
-          const pushmemelike = {
-            _id: item._id,
-            ...getmemeid,
-            upvote: item.upvote + 1,
+        // If not liked or disliked, add a new like
+        const newLike = {
+          _id: generateId(),
+          memeid: item.memeid,
+          userid: userid,
+          upvote: true,
+        };
+        setlikes([...likes, newLike]);
+        setdata(data.map(meme => meme.memeid === item.memeid ? { ...meme, upvote: meme.upvote + 1 } : meme));
+      }
+  
+      if (likingdata) {
+        const getid = await dbMemevote.get(likingdata._id).catch((error: any) => {
+          if (error.name === 'not_found') {
+            // Handle not found error
+            console.error("Document not found in the database");
+            return null;
+          }
+          throw error;
+        });
+  
+        if (getid) {
+          const pushmedislike = {
+            _id: getid._id,
+            ...getid,
+            upvote: likingdata.upvote,
           };
-          await dbMeme.put(pushmemelike);
-          getdata();
-          userdataonvote();
+          await dbMemevote.put(pushmedislike);
+        } else {
+          // Document not found, handle accordingly
+          console.error("Document not found in the database");
+        }
+      } else {
+        const id = generateId();
+        await dbMemevote.put({
+          _id: id,
+          userid: userid,
+          memeid: item.memeid,
+          upvote: true,
+        });
       }
     } catch (error) {
       console.error(error);
     }
-  };  
-
+  };
 
   useEffect(() =>{
     getdata()
