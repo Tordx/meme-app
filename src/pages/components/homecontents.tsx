@@ -1,4 +1,4 @@
-import { FlatList, Image, StyleSheet, Text, View, Share, Alert, Pressable , useColorScheme} from 'react-native'
+import { FlatList, Image, StyleSheet, Text, View, Share, Alert, Pressable , useColorScheme, Animated, Easing } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { dbMeme, dbMemevote } from '../../database/database'
 import { Iconbutton, Loginbutton } from '../../partials/Buttons'
@@ -76,10 +76,16 @@ const Homecontents = (props: Props) => {
   
   const colorScheme = useColorScheme() === 'dark';
   const dispatch = useDispatch()
+
+  
+
+  useEffect(() =>{
+    getdata()
+    userdataonvote()
+  },[])
   
     const getdata = async() => {
       
-    try {
         let result = await dbMeme.allDocs({
           include_docs: true,
           attachments: true,
@@ -94,13 +100,8 @@ const Homecontents = (props: Props) => {
           })
           
           setdata(filteredData);
-              
-              
           
-        } 
-      } catch (error) {
-        console.error(error);
-    }
+        }
 
   }
 
@@ -118,19 +119,10 @@ const Homecontents = (props: Props) => {
         )
         let filteredData = modifiedArr.filter((item: any) => {
         
-          return item.memeid 
-        })
-        
-        let newFilteredData = filteredData.filter((item: any) => {
-
           return item.userid === userid
         })
-          
-        let filteredvote = newFilteredData.filter((item: any) => {
-          return item.upvote  === true
-        })
         
-        setlikes(filteredvote);
+        setlikes(filteredData);
         
         
       } 
@@ -142,70 +134,83 @@ const Homecontents = (props: Props) => {
 
   
   const handleLike = async (item: MemeData) => {
+    
+    const id = generateId();
+
     try {
-      const likingdata = likes && likes.find((likingdata) => likingdata.memeid === item.memeid);
+      const likingData = likes.find((like) => like.memeid === item.memeid);
+      console.log(likingData);
   
-      if (likingdata) {
-        if (likingdata.upvote === true) {
-          // If already liked, remove the like
-          setlikes(likes.map(vote => vote.memeid === item.memeid ? { ...vote, upvote: false } : vote));
-          setdata(data.map(meme => meme.memeid === item.memeid ? { ...meme, upvote: meme.upvote - 1 } : meme));
-        } else if (likingdata.upvote === false) {
-          // If disliked, change to like
-          setlikes(likes.map(vote => vote.memeid === item.memeid ? { ...vote, upvote: true } : vote));
-          setdata(data.map(meme => meme.memeid === item.memeid ? { ...meme, upvote: meme.upvote + 1 } : meme));
+      if (likingData) {
+        console.log('this');
+        
+        if (likingData.upvote === true) {
+          const doc = await dbMemevote.get(likingData._id);
+          console.log(doc);
+          await dbMemevote.put({
+            _id: doc._id,
+            _rev: doc._rev,
+            userid: userid,
+            memeid: item.memeid,
+            upvote: false,
+          });
+  
+          setlikes((prevLikes) =>
+            prevLikes.map((like) =>
+              like.memeid === item.memeid ? { ...like, upvote: false } : like
+            )
+          );
+  
+          setdata((prevData) =>
+            prevData.map((meme) =>
+              meme.memeid === item.memeid ? { ...meme, upvote: meme.upvote - 1 } : meme
+            )
+          );
+        } else if (likingData.upvote === false) {
+          const doc = await dbMemevote.get(likingData._id);
+          await dbMemevote.put({
+            _id: doc._id,
+            _rev: doc._rev,
+            userid: userid,
+            memeid: item.memeid,
+            upvote: true,
+          });
+  
+          setlikes((prevLikes) =>
+            prevLikes.map((like) =>
+              like.memeid === item.memeid ? { ...like, upvote: true } : like
+            )
+          );
+  
+          setdata((prevData) =>
+            prevData.map((meme) =>
+              meme.memeid === item.memeid ? { ...meme, upvote: meme.upvote + 1 } : meme
+            )
+          );
         }
       } else {
-        // If not liked or disliked, add a new like
         const newLike = {
-          _id: generateId(),
-          memeid: item.memeid,
-          userid: userid,
-          upvote: true,
-        };
-        setlikes([...likes, newLike]);
-        setdata(data.map(meme => meme.memeid === item.memeid ? { ...meme, upvote: meme.upvote + 1 } : meme));
-      }
-  
-      if (likingdata) {
-        const getid = await dbMemevote.get(likingdata._id).catch((error: any) => {
-          if (error.name === 'not_found') {
-            // Handle not found error
-            console.error("Document not found in the database");
-            return null;
-          }
-          throw error;
-        });
-  
-        if (getid) {
-          const pushmedislike = {
-            _id: getid._id,
-            ...getid,
-            upvote: likingdata.upvote,
-          };
-          await dbMemevote.put(pushmedislike);
-        } else {
-          // Document not found, handle accordingly
-          console.error("Document not found in the database");
-        }
-      } else {
-        const id = generateId();
-        await dbMemevote.put({
           _id: id,
           userid: userid,
           memeid: item.memeid,
           upvote: true,
-        });
+        };
+  
+        await dbMemevote.put(newLike);
+        console.log(newLike);
+        
+        setlikes((prevLikes) => [...prevLikes, newLike]);
+  
+        setdata((prevData) =>
+          prevData.map((meme) =>
+            meme.memeid === item.memeid ? { ...meme, upvote: meme.upvote + 1 } : meme
+          )
+        );
       }
     } catch (error) {
       console.error(error);
     }
   };
-
-  useEffect(() =>{
-    getdata()
-    userdataonvote()
-  },[])
 
   const forRefresh = () => {
 
@@ -251,7 +256,7 @@ const Homecontents = (props: Props) => {
           <Iconbutton
             onPress={() => {handleLike(item)}}
             name = {likes.find(vote => vote.memeid === item.memeid)?.upvote ? 'heart' : 'heart-outline'}
-            size = {35}
+            size={35}
             color={likes.find(vote => vote.memeid === item.memeid)?.upvote ? (colorScheme ? lightgreen : cyan) : (colorScheme? textlight: textdark)}
           />
         </View>
