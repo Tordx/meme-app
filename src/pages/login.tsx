@@ -53,7 +53,7 @@ const Login = () => {
           if(newusername === username && newpassword === password) {
             if(status !== "Active"){
               Alert.alert('Account is not active', ' Please contact your moderators for more Info')
-              // setLoading(false)
+              setopenmodal(false)
               return;
             } else {
               if(usertype === "user") {
@@ -76,11 +76,11 @@ const Login = () => {
             }
           } else {
             Alert.alert('Whoooooops!', "something went wrong or your username & password didn't match our system")
-            // setLoading(false)
+            setopenmodal(false)
           }
         } else {
           Alert.alert('Username not found', "The username you entered doesn't exist in our system. Please try again.")
-          // setLoading(false)
+          setopenmodal(false)
         }
       }
     } catch (error) {
@@ -131,7 +131,7 @@ const Login = () => {
         />
       </View>
       <Loadingmodal
-      visible = {false}
+      visible = {openmodal}
       />
     </ImageBackground>
   )
