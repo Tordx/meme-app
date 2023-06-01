@@ -1,9 +1,10 @@
-import { StyleSheet, View, useColorScheme, Dimensions, FlatList, ViewToken, Button } from 'react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import { StyleSheet, View, useColorScheme, Dimensions, FlatList, ViewToken, Text, Pressable, Image } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { dbMemevideo } from '../../database/database';
 import RNFS from 'react-native-fs';
 import Video from 'react-native-video';
 import { Dark, light } from '../../Assets/Colors';
+import { useIsFocused } from '@react-navigation/native';
 
 type Props = {};
 
@@ -24,13 +25,26 @@ interface Document {
   timestamp: Date;
 }
 
+const { width, height } = Dimensions.get('screen');
+
 const Videos = (props: Props) => {
   const colorScheme = useColorScheme() === 'dark';
+  const [paused, ispaused] = useState(false)
   const [data, setdata] = useState<Document[]>([]);
-  const [videoPaths, setVideoPaths] = useState<string[]>([]);
-  const windowHeight = Dimensions.get('window').height;
+  const [videoPaths, setVideoPaths] = useState<Document | undefined>(undefined);
   const flatListRef = useRef<FlatList<Document>>(null);
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(0);
+  const videoRef = useRef<Video>(null);
+  const isFocused = useIsFocused();
+
+  useEffect(() => {
+    if (!isFocused) {
+      // Pause the video when the screen loses focus
+     ispaused(true)
+    } else {
+      // Resume or play the video when the screen gains focus
+      ispaused(false)
+    }
+  }, [isFocused]);
 
   const getVideoPaths = async () => {
     try {
@@ -45,6 +59,8 @@ const Videos = (props: Props) => {
 
         if (filteredData.length > 0) {
           setdata(filteredData);
+          console.log(filteredData);
+          
         }
       }
     } catch (error) {
@@ -56,62 +72,61 @@ const Videos = (props: Props) => {
     getVideoPaths();
   }, []);
 
-  const onViewableItemsChanged = useRef(({ viewableItems, changed }: { viewableItems: ViewToken[], changed: ViewToken[] }) => {
-    if (viewableItems.length > 0) {
-      const index = viewableItems[0].index;
-      setFocusedIndex(index);
-    }
-  });
+  const handleViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      if (viewableItems.length > 0) {
+        const videoPath = viewableItems[0].item.video;
+        setVideoPaths(videoPath);
+        console.log(videoPath);
+        
+      } else {
+        setVideoPaths(undefined);
+      }
+    },
+    []
+  );
 
   const renderVideoItem = ({ item, index }: { item: Document, index: number }) => {
-    if (index !== focusedIndex) {
-      return null; // Render null for non-focused items
-    }
 
     return (
-      <View style={[styles.videoContainer, { height: windowHeight }]}>
-        <Video
-          source={{ uri: item.video }}
-          resizeMode="contain"
-          playInBackground= {false}
-          style={styles.backgroundVideo}
-        />
-      </View>
+      <Pressable style={[styles.itemcontainer, { height: height, width: width,}]}
+        onLongPress={() => ispaused(!paused)}
+        delayLongPress={300}
+        onPressOut={() => ispaused(false)}
+      >
+        <View style = {{position: 'absolute', right: 0}}>
+          <Image source = {{uri: item.userimage}} resizeMode='cover' style = {{width: 50, height: 50}} />
+        </View>
+      </Pressable>
     );
   };
 
-  const scrollToNextItem = () => {
-    if (focusedIndex !== null && focusedIndex < data.length - 1) {
-      const nextIndex = focusedIndex + 1;
-      flatListRef.current?.scrollToIndex({ index: nextIndex });
-      setFocusedIndex(nextIndex);
-    }
-  };
-
-  const scrollToPreviousItem = () => {
-    if (focusedIndex !== null && focusedIndex > 0) {
-      const previousIndex = focusedIndex - 1;
-      flatListRef.current?.scrollToIndex({ index: previousIndex });
-      setFocusedIndex(previousIndex);
-    }
-  };
-  
-
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {backgroundColor: colorScheme ? Dark : light}]}>
+      
+      <Video
+          ref={videoRef}
+          source={{ uri: videoPaths?.video }}
+          resizeMode="cover"
+          paused = {paused}
+          repeat = {true}
+          focusable ={false}
+          playInBackground= {false}
+          style={styles.backgroundVideo}
+        />
       <FlatList
   
-        onScroll={scrollToNextItem}
         ref={flatListRef}
-        style={{ height: windowHeight }}
+        style={{ height: height }}
         data={data}
         renderItem={renderVideoItem}
         keyExtractor={(item) => item._id}
-        onViewableItemsChanged={onViewableItemsChanged.current}
+        onViewableItemsChanged={handleViewableItemsChanged}
+        snapToInterval={height}
+        snapToAlignment="start"
         pagingEnabled
+        showsVerticalScrollIndicator = {false}
       />
-       <Button title='prev ' onPress={scrollToPreviousItem}></Button>
-      <Button title='next' onPress={scrollToNextItem}></Button>
     </View>
   );
 };
@@ -124,11 +139,19 @@ const styles = StyleSheet.create({
   },
   videoContainer: {
     width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
+  itemcontainer: {
+    
+    justifyContent: 'center',
+    alignItems: 'center',
+
+  },
   backgroundVideo: {
     position: 'absolute',
+    width: width,
     top: 0,
     left: 0,
     bottom: 0,
