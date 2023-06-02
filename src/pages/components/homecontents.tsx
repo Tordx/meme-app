@@ -79,11 +79,13 @@ const Homecontents = (props: Props) => {
 
   
 
-  useEffect(() =>{
-    getdata()
-    userdataonvote()
-  },[])
-  
+  useEffect(() => {
+    if (userid) {
+      userdataonvote(userid);
+    }
+    getdata();
+  }, [userid]);
+
     const getdata = async() => {
       
         let result = await dbMeme.allDocs({
@@ -101,11 +103,12 @@ const Homecontents = (props: Props) => {
           
           setdata(filteredData);
           
+          
         }
 
   }
 
-  const userdataonvote = async() => {
+  const userdataonvote = async(userId: string) => {
 
     try {
       
@@ -216,16 +219,13 @@ const Homecontents = (props: Props) => {
 
     setrefresh(true)
     getdata()
-    userdataonvote()
+    userdataonvote(userid)
     setrefresh(false)
     
   }
 
   const renderItem = ({ item }: { item: MemeData }) =>{
   
-    if (!firstItem) {
-      setFirstItem(item);
-    }
     return(
 
     <View style={styles.card}>
@@ -248,7 +248,7 @@ const Homecontents = (props: Props) => {
         </View>
         <View style = {styles.content}>
           <Text style = {[styles.description, {color: colorScheme ? light: Dark}]}>{item.description}</Text>
-          {item.image as string && <Image source={{ uri: item?.image}} style = {styles.contentimage} resizeMode = 'contain' />}
+         <Image source={{ uri: item.image}} style = {styles.contentimage} resizeMode = 'contain' />
         </View>
       </View>
       <View style = {styles.buttoncontainer}>
