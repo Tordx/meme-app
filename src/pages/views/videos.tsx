@@ -5,6 +5,7 @@ import RNFS from 'react-native-fs';
 import Video from 'react-native-video';
 import { Dark, light } from '../../Assets/Colors';
 import { useIsFocused } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = {};
 
@@ -31,18 +32,14 @@ const Videos = (props: Props) => {
   const colorScheme = useColorScheme() === 'dark';
   const [paused, ispaused] = useState(false)
   const [data, setdata] = useState<Document[]>([]);
-  const [videoPaths, setVideoPaths] = useState<Document | undefined>(undefined);
   const flatListRef = useRef<FlatList<Document>>(null);
   const videoRef = useRef<Video>(null);
   const isFocused = useIsFocused();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!isFocused) {
-      // Pause the video when the screen loses focus
-     ispaused(true)
-    } else {
-      // Resume or play the video when the screen gains focus
-      ispaused(false)
+      ispaused(true)
     }
   }, [isFocused]);
 
@@ -60,6 +57,7 @@ const Videos = (props: Props) => {
         if (filteredData.length > 0) {
           setdata(filteredData);
           console.log(filteredData);
+          console.log('hello');
           
         }
       }
@@ -72,28 +70,24 @@ const Videos = (props: Props) => {
     getVideoPaths();
   }, []);
 
-  const handleViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      if (viewableItems.length > 0) {
-        const videoPath = viewableItems[0].item.video;
-        setVideoPaths(videoPath);
-        console.log(videoPath);
-        
-      } else {
-        setVideoPaths(undefined);
-      }
-    },
-    []
-  );
-
   const renderVideoItem = ({ item, index }: { item: Document, index: number }) => {
-
+    const itemHeight = Dimensions.get('window').height - insets.top - insets.bottom;
     return (
-      <Pressable style={[styles.itemcontainer, { height: height, width: width,}]}
-        onLongPress={() => ispaused(!paused)}
+      <Pressable style={[styles.itemcontainer, { height: itemHeight, width: width,}]}
+        onLongPress={() => ispaused(true)}
         delayLongPress={300}
         onPressOut={() => ispaused(false)}
       >
+        
+      <Video
+          source={{ uri: item.video }}
+          resizeMode="cover"
+          paused = {paused}
+          repeat = {true}
+          focusable ={false}
+          playInBackground= {false}
+          style={styles.backgroundVideo}
+        />
         <View style = {{position: 'absolute', right: 0}}>
           <Image source = {{uri: item.userimage}} resizeMode='cover' style = {{width: 50, height: 50}} />
         </View>
@@ -104,16 +98,6 @@ const Videos = (props: Props) => {
   return (
     <View style={[styles.container, {backgroundColor: colorScheme ? Dark : light}]}>
       
-      <Video
-          ref={videoRef}
-          source={{ uri: videoPaths?.video }}
-          resizeMode="cover"
-          paused = {paused}
-          repeat = {true}
-          focusable ={false}
-          playInBackground= {false}
-          style={styles.backgroundVideo}
-        />
       <FlatList
   
         ref={flatListRef}
@@ -121,7 +105,6 @@ const Videos = (props: Props) => {
         data={data}
         renderItem={renderVideoItem}
         keyExtractor={(item) => item._id}
-        onViewableItemsChanged={handleViewableItemsChanged}
         snapToInterval={height}
         snapToAlignment="start"
         pagingEnabled
@@ -135,7 +118,8 @@ export default Videos;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
   },
   videoContainer: {
     width: '100%',
@@ -152,6 +136,7 @@ const styles = StyleSheet.create({
   backgroundVideo: {
     position: 'absolute',
     width: width,
+    height: '100%',
     top: 0,
     left: 0,
     bottom: 0,
