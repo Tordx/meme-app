@@ -52,7 +52,6 @@ const Login = () => {
             const status = newFilterData[0].status
           if(newusername === username && newpassword === password) {
             if(status !== "Active"){
-              Alert.alert('Account is not active', ' Please contact your moderators for more Info')
               setopenmodal(false)
               return;
             } else {
